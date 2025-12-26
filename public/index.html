@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Graph Network</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>UIUC Course Graph Network</h1>
+            <div class="stats" id="stats"></div>
+        </header>
+
+        <div class="controls">
+            <div class="search-container">
+                <label>Search Course:</label>
+                <div class="search-inputs">
+                    <select id="deptCodeSelect">
+                        <option value="">Department</option>
+                    </select>
+                    <select id="courseNumSelect">
+                        <option value="">Course Number</option>
+                    </select>
+                    <button id="searchBtn">Find Course</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <button id="resetBtn">Reset View</button>
+                <button id="scrapeBtn">Scrape New Data</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="network"></div>
+            <div class="info-panel" id="infoPanel">
+                <h3>Course Information</h3>
+                <div id="courseInfo">
+                    <p>Click on a course node or search for a course to see details</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

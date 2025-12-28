@@ -261,8 +261,9 @@ class CourseScraper {
 if (require.main === module) {
   (async () => {
     const scraper = new CourseScraper();
-    // Scrape first 5 departments (for testing - change to scrapeAll() for all departments)
-    await scraper.scrapeAll(5);
+    // Scrape all departments (pass null or no argument to scrape everything)
+    // This will take 10-15 minutes for ~193 departments with 2-4 second delays
+    await scraper.scrapeAll();
     await scraper.saveToFile();
   })();
 }

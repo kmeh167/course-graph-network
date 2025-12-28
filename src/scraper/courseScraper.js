@@ -57,8 +57,16 @@ class CourseScraper {
     // Extract only the prerequisite section (everything after "Prerequisite:")
     const prereqSection = descText.substring(prereqIndex);
 
-    // Check if "concurrent registration" is mentioned (indicates corequisites)
-    const isConcurrentRegistration = prereqSection.toLowerCase().includes('concurrent registration');
+    // Find where "concurrent registration" or "Concurrent:" appears
+    // This marks the boundary between prerequisites and corequisites
+    const concurrentMatches = [
+      prereqSection.toLowerCase().indexOf('concurrent registration'),
+      prereqSection.toLowerCase().indexOf('concurrent:')
+    ].filter(idx => idx !== -1);
+
+    const concurrentBoundary = concurrentMatches.length > 0
+      ? Math.min(...concurrentMatches)
+      : Infinity; // No concurrent boundary, all are prerequisites
 
     // Find all course code links in the description
     // Links look like <a href="/...">CS 225</a>
@@ -73,17 +81,12 @@ class CourseScraper {
         // Format the course name consistently (e.g., "CS 225")
         const courseName = `${courseMatch[1]} ${courseMatch[2]}`;
 
-        // Determine if link is in the prerequisite section
+        // Find where this course appears in the prerequisite section
         const linkPosition = prereqSection.indexOf(linkText);
         if (linkPosition !== -1) {
-          // Get surrounding text to check if it mentions "concurrent"
-          const contextStart = Math.max(0, linkPosition - 50);
-          const contextEnd = Math.min(prereqSection.length, linkPosition + linkText.length + 50);
-          const context = prereqSection.substring(contextStart, contextEnd).toLowerCase();
-
-          // If context mentions "concurrent" AND course allows concurrent registration,
-          // it's a corequisite. Otherwise, it's a prerequisite.
-          if (context.includes('concurrent') && isConcurrentRegistration) {
+          // If the course appears AFTER "concurrent registration", it's a corequisite
+          // Otherwise, it's a prerequisite
+          if (linkPosition >= concurrentBoundary) {
             if (!corequisites.includes(courseName)) {
               corequisites.push(courseName);
             }

@@ -191,7 +191,13 @@ function setupEventListeners() {
         nodes.add(allNodes);
         edges.add(allEdges);
         populateSearchDropdowns();
-        network.fit();
+        network.fit({
+            animation: {
+                duration: 500,
+                easingFunction: 'easeInOutQuad'
+            },
+            maxZoomLevel: 0.8  // Limit zoom to prevent too close view
+        });
     });
 
     document.getElementById('searchBtn').addEventListener('click', () => {
@@ -206,7 +212,13 @@ function setupEventListeners() {
 
     document.getElementById('resetBtn').addEventListener('click', () => {
         resetHighlight();
-        network.fit();
+        network.fit({
+            animation: {
+                duration: 500,
+                easingFunction: 'easeInOutQuad'
+            },
+            maxZoomLevel: 0.8
+        });
     });
 }
 

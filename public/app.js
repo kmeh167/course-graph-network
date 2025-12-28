@@ -152,6 +152,7 @@ function populateSearchDropdowns() {
     });
 
     const deptSelect = document.getElementById('deptCodeSelect');
+    deptSelect.innerHTML = '<option value="">Department</option>'; // Clear existing options
     const sortedDepts = Array.from(deptCodes).sort();
     sortedDepts.forEach(dept => {
         const option = document.createElement('option');
@@ -160,11 +161,15 @@ function populateSearchDropdowns() {
         deptSelect.appendChild(option);
     });
 
-    deptSelect.addEventListener('change', () => {
+    // Remove old event listener by cloning and replacing
+    const newDeptSelect = deptSelect.cloneNode(true);
+    deptSelect.parentNode.replaceChild(newDeptSelect, deptSelect);
+
+    document.getElementById('deptCodeSelect').addEventListener('change', () => {
         const numSelect = document.getElementById('courseNumSelect');
         numSelect.innerHTML = '<option value="">Course Number</option>';
 
-        const selectedDept = deptSelect.value;
+        const selectedDept = document.getElementById('deptCodeSelect').value;
         if (selectedDept && courseNumbers.has(selectedDept)) {
             const numbers = Array.from(courseNumbers.get(selectedDept)).sort();
             numbers.forEach(num => {

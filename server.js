@@ -31,7 +31,32 @@ async function loadCourseData() {
 }
 
 app.get('/api/graph', (req, res) => {
-  const graphData = courseGraph.getGraphData();
+  const limit = parseInt(req.query.limit) || 500;
+  const dept = req.query.dept;
+
+  let graphData;
+
+  if (dept) {
+    // Get department-specific data
+    const nodes = courseGraph.getNodesByDepartment(dept.toUpperCase());
+    const nodeCodes = nodes.map(n => n.id);
+    const edges = courseGraph.edges.filter(
+      e => nodeCodes.includes(e.from) || nodeCodes.includes(e.to)
+    );
+    graphData = { nodes, edges };
+  } else {
+    // Get limited data to prevent browser freeze
+    const allData = courseGraph.getGraphData();
+    graphData = {
+      nodes: allData.nodes.slice(0, limit),
+      edges: allData.edges.filter(e =>
+        allData.nodes.slice(0, limit).some(n => n.id === e.from || n.id === e.to)
+      ),
+      total: allData.nodes.length,
+      showing: Math.min(limit, allData.nodes.length)
+    };
+  }
+
   res.json(graphData);
 });
 

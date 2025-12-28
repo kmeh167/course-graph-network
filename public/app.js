@@ -170,14 +170,14 @@ function setupEventListeners() {
     });
 
     document.getElementById('scrapeBtn').addEventListener('click', async () => {
-        if (confirm('This will scrape new data (first 5 departments for testing). Continue?')) {
+        if (confirm('This will scrape data from ALL departments (~193 departments, takes 10-15 minutes). Continue?')) {
             try {
                 await fetch(`${API_BASE}/scrape`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ limit: 5 })
+                    body: JSON.stringify({ limit: null })
                 });
-                alert('Scraping started! Reload the page in a few minutes to see new data.');
+                alert('Scraping started! This will take 10-15 minutes. Reload the page after completion to see new data.');
             } catch (error) {
                 alert('Error starting scrape: ' + error.message);
             }

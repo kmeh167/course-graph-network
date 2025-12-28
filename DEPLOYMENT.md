@@ -84,7 +84,7 @@ Press F12 to open Developer Console
 Go to the Console tab
 Paste this (replace with your actual Render URL):
 ```
-fetch('https://your-backend-url.onrender.com/api/scrape', {
+fetch('https://course-graph-backend.onrender.com/api/scrape', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ limit: 5 })

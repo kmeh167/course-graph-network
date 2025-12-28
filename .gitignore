@@ -2,8 +2,6 @@ node_modules/
 *.log
 .env
 .DS_Store
-data/*.json
-!data/.gitkeep
 
 # Don't ignore config.js - needed for deployment
 !public/config.js

@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs').promises;
-const CourseScraper = require('./src/scraper/courseScraper');
 const CourseGraph = require('./src/graph/graphBuilder');
 
 const app = express();
@@ -85,22 +84,8 @@ app.get('/api/stats', (req, res) => {
   res.json(courseGraph.getStats());
 });
 
-app.post('/api/scrape', async (req, res) => {
-  try {
-    const limit = req.body.limit || null;
-    const scraper = new CourseScraper();
-
-    res.json({ message: 'Scraping started', status: 'in_progress' });
-
-    scraper.scrapeAll(limit).then(async (courses) => {
-      await scraper.saveToFile();
-      await loadCourseData();
-      console.log('Scraping completed and data reloaded');
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Scraping endpoint removed - data is now pre-scraped and committed to repository
+// To update data: run `npm run scrape` locally, then commit and push data/courses.json
 
 app.get('/api/departments', (req, res) => {
   const departments = [...new Set(coursesData.map(c => c.department))].sort();

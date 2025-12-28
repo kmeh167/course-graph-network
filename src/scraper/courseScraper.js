@@ -255,6 +255,46 @@ class CourseScraper {
     await fs.writeFile(filepath, JSON.stringify(this.courses, null, 2));
     console.log(`Data saved to ${filepath}`);
   }
+
+  /**
+   * Saves scraped course data to a CSV file
+   * @param {string} filename - Name of the file to save (default: courses.csv)
+   */
+  async saveToCSV(filename = 'courses.csv') {
+    // Create data directory if it doesn't exist
+    const dataDir = path.join(__dirname, '../../data');
+    await fs.mkdir(dataDir, { recursive: true });
+
+    // CSV header
+    const header = 'code,name,department,description,prerequisites,corequisites,url\n';
+
+    // Convert each course to CSV row
+    const rows = this.courses.map(course => {
+      // Escape fields that might contain commas or quotes
+      const escapeCSV = (str) => {
+        if (!str) return '';
+        str = String(str).replace(/"/g, '""'); // Escape quotes
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str}"`;
+        }
+        return str;
+      };
+
+      return [
+        escapeCSV(course.code),
+        escapeCSV(course.name),
+        escapeCSV(course.department),
+        escapeCSV(course.description),
+        escapeCSV(course.prerequisites.join('; ')),
+        escapeCSV(course.corequisites.join('; ')),
+        escapeCSV(course.url)
+      ].join(',');
+    }).join('\n');
+
+    const filepath = path.join(dataDir, filename);
+    await fs.writeFile(filepath, header + rows);
+    console.log(`CSV data saved to ${filepath}`);
+  }
 }
 
 // If this file is run directly (not imported as a module), run the scraper
@@ -265,6 +305,8 @@ if (require.main === module) {
     // This will take 10-15 minutes for ~193 departments with 2-4 second delays
     await scraper.scrapeAll();
     await scraper.saveToFile();
+    await scraper.saveToCSV();
+    console.log('Scraping complete! Data saved in both JSON and CSV formats.');
   })();
 }
 

@@ -168,21 +168,6 @@ function setupEventListeners() {
         resetHighlight();
         network.fit();
     });
-
-    document.getElementById('scrapeBtn').addEventListener('click', async () => {
-        if (confirm('This will scrape data from ALL departments (~193 departments, takes 10-15 minutes). Continue?')) {
-            try {
-                await fetch(`${API_BASE}/scrape`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ limit: null })
-                });
-                alert('Scraping started! This will take 10-15 minutes. Reload the page after completion to see new data.');
-            } catch (error) {
-                alert('Error starting scrape: ' + error.message);
-            }
-        }
-    });
 }
 
 async function focusOnCourse(courseCode) {

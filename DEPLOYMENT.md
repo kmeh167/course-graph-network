@@ -79,6 +79,20 @@ curl -X POST https://your-app.onrender.com/api/scrape \
   -d '{"limit": 5}'
 ```
 
+Option 1 - Browser (Easiest):
+Press F12 to open Developer Console
+Go to the Console tab
+Paste this (replace with your actual Render URL):
+```
+fetch('https://your-backend-url.onrender.com/api/scrape', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ limit: 5 })
+})
+.then(r => r.json())
+.then(d => console.log('Scrape started:', d))
+```
+
 ### Step 6: Configure Environment Variables (Optional)
 
 In Render dashboard → Your Service → Environment:

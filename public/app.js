@@ -196,7 +196,7 @@ function setupEventListeners() {
                 duration: 500,
                 easingFunction: 'easeInOutQuad'
             },
-            maxZoomLevel: 0.8  // Limit zoom to prevent too close view
+            maxZoomLevel: 0.5  // Limit zoom to prevent too close view
         });
     });
 
@@ -217,7 +217,7 @@ function setupEventListeners() {
                 duration: 500,
                 easingFunction: 'easeInOutQuad'
             },
-            maxZoomLevel: 0.8
+            maxZoomLevel: 0.5
         });
     });
 }

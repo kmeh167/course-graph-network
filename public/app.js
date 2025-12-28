@@ -245,13 +245,20 @@ async function focusOnCourse(courseCode) {
         highlightCourseWithDependencies(courseCode, courseData);
         displayCourseInfo(courseData);
 
-        // Center on the selected course
-        setTimeout(() => {
+        // Wait for network to stabilize before focusing
+        // This ensures the node positions are calculated
+        network.once('stabilized', () => {
             network.focus(courseCode, {
-                scale: 1.5,
-                animation: true
+                scale: 1.2,
+                animation: {
+                    duration: 1000,
+                    easingFunction: 'easeInOutQuad'
+                }
             });
-        }, 100);
+        });
+
+        // Trigger stabilization if it's not already running
+        network.stabilize();
 
     } catch (error) {
         console.error('Error fetching course data:', error);

@@ -268,6 +268,7 @@ async function focusOnCourse(courseCode) {
 function highlightCourseWithDependencies(courseCode, courseData) {
     const prerequisites = new Set(courseData.prerequisites || []);
     const corequisites = new Set(courseData.corequisites || []);
+    const postrequisites = new Set((courseData.postrequisites || []).map(p => p.code));
 
     const updatedNodes = allNodes.map(node => {
         if (node.id === courseCode) {
@@ -299,6 +300,17 @@ function highlightCourseWithDependencies(courseCode, courseData) {
                 color: {
                     background: '#4CAF50',
                     border: '#388E3C'
+                },
+                font: { color: '#ffffff', size: 14 },
+                size: 20
+            };
+        } else if (postrequisites.has(node.id)) {
+            // Postrequisites - purple
+            return {
+                ...node,
+                color: {
+                    background: '#9C27B0',
+                    border: '#7B1FA2'
                 },
                 font: { color: '#ffffff', size: 14 },
                 size: 20
@@ -354,6 +366,17 @@ function displayCourseInfo(course) {
         return `<span class="course-link" onclick="focusOnCourse('${normalized}')">${normalized}</span>`;
     });
 
+    // Format postrequisites
+    let postreqHtml = '<p>None</p>';
+    if (course.postrequisites && course.postrequisites.length > 0) {
+        postreqHtml = '<ul>' + course.postrequisites.map(postreq => {
+            const otherPrereqs = postreq.otherPrerequisites && postreq.otherPrerequisites.length > 0
+                ? ` <span style="font-size: 0.9em; color: #666;">(also requires: ${postreq.otherPrerequisites.join(', ')})</span>`
+                : '';
+            return `<li><span class="course-link" onclick="focusOnCourse('${postreq.code}')">${postreq.code}</span> - ${postreq.name}${otherPrereqs}</li>`;
+        }).join('') + '</ul>';
+    }
+
     infoDiv.innerHTML = `
         <h4 class="course-code">${course.code}</h4>
         <h5>${course.name}</h5>
@@ -364,6 +387,7 @@ function displayCourseInfo(course) {
             <span style="color: #e84a27;">●</span> Selected Course<br>
             <span style="color: #2196F3;">●</span> Prerequisites (Blue)<br>
             <span style="color: #4CAF50;">●</span> Corequisites (Green)<br>
+            <span style="color: #9C27B0;">●</span> Postrequisites (Purple)<br>
             <span style="color: #cccccc;">●</span> Other Department Courses
         </div>
 
@@ -375,6 +399,9 @@ function displayCourseInfo(course) {
 
         <h4>Corequisites</h4>
         ${coreqHtml}
+
+        <h4>Postrequisites (Courses You Can Take After)</h4>
+        ${postreqHtml}
     `;
 }
 

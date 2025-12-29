@@ -107,7 +107,21 @@ app.get('/api/course/:code', (req, res) => {
     return res.status(404).json({ error: 'Course not found' });
   }
 
-  res.json(course);
+  // Add postrequisites (courses that require this course)
+  const postrequisites = courseGraph.getDependentsFor(code);
+  const postrequisiteData = postrequisites.map(node => ({
+    code: node.id,
+    name: node.name,
+    // Get additional prerequisites for this postrequisite
+    otherPrerequisites: coursesData
+      .find(c => c.code === node.id)
+      ?.prerequisites.filter(p => p !== code) || []
+  }));
+
+  res.json({
+    ...course,
+    postrequisites: postrequisiteData
+  });
 });
 
 app.get('/api/course/:code/prerequisites', (req, res) => {

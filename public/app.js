@@ -220,6 +220,21 @@ function setupEventListeners() {
             highlightCourseWithDependencies(currentSelectedCourse, currentCourseData);
         }
     });
+
+    document.getElementById('suggestCoursesBtn').addEventListener('click', async () => {
+        const input = document.getElementById('completedCoursesInput').value.trim();
+        if (!input) {
+            alert('Please enter at least one completed course');
+            return;
+        }
+
+        // Parse input - split by comma and clean up
+        const completedCourses = input.split(',')
+            .map(c => c.trim().toUpperCase())
+            .filter(c => c.length > 0);
+
+        await showCourseSuggestions(completedCourses);
+    });
 }
 
 async function focusOnCourse(courseCode) {
@@ -465,6 +480,91 @@ async function updateStats() {
     } catch (error) {
         console.error('Error loading stats:', error);
     }
+}
+
+async function showCourseSuggestions(completedCourses) {
+    try {
+        const response = await fetch(`${API_BASE}/suggest-courses`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ completedCourses })
+        });
+
+        const suggestions = await response.json();
+        displayCourseSuggestions(completedCourses, suggestions);
+    } catch (error) {
+        console.error('Error getting course suggestions:', error);
+        alert('Error getting course suggestions. Please try again.');
+    }
+}
+
+function displayCourseSuggestions(completedCourses, suggestions) {
+    const infoDiv = document.getElementById('courseInfo');
+
+    const completedList = completedCourses.join(', ');
+
+    let canTakeHtml = '<p>None</p>';
+    if (suggestions.canTake.length > 0) {
+        canTakeHtml = `<ul>${suggestions.canTake.map(course =>
+            `<li>
+                <span class="course-link" onclick="focusOnCourse('${course.code}')">${course.code}</span> - ${course.name}
+                <span style="font-size: 0.85em; color: #666;"> (${course.department})</span>
+            </li>`
+        ).join('')}</ul>`;
+    }
+
+    let partialHtml = '<p>None</p>';
+    if (suggestions.partialPrereqs.length > 0) {
+        partialHtml = `<ul>${suggestions.partialPrereqs.slice(0, 50).map(course => {
+            const missing = [...course.missingPrereqs, ...course.missingCoreqs];
+            return `<li>
+                <span class="course-link" onclick="focusOnCourse('${course.code}')">${course.code}</span> - ${course.name}
+                <span style="font-size: 0.85em; color: #666;"> (${course.department})</span>
+                <br><span style="font-size: 0.8em; color: #999;">Still need: ${missing.join(', ')}</span>
+            </li>`;
+        }).join('')}</ul>`;
+        if (suggestions.partialPrereqs.length > 50) {
+            partialHtml += `<p style="font-size: 0.9em; color: #666;"><em>Showing first 50 of ${suggestions.partialPrereqs.length} courses</em></p>`;
+        }
+    }
+
+    let noPrereqsHtml = '<p>None</p>';
+    if (suggestions.noPrereqs.length > 0) {
+        noPrereqsHtml = `<ul>${suggestions.noPrereqs.slice(0, 50).map(course =>
+            `<li>
+                <span class="course-link" onclick="focusOnCourse('${course.code}')">${course.code}</span> - ${course.name}
+                <span style="font-size: 0.85em; color: #666;"> (${course.department})</span>
+            </li>`
+        ).join('')}</ul>`;
+        if (suggestions.noPrereqs.length > 50) {
+            noPrereqsHtml += `<p style="font-size: 0.9em; color: #666;"><em>Showing first 50 of ${suggestions.noPrereqs.length} courses</em></p>`;
+        }
+    }
+
+    infoDiv.innerHTML = `
+        <h3>Course Suggestions</h3>
+        <p><strong>Completed Courses:</strong> ${completedList}</p>
+        <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
+            <em>Note: Suggestions don't account for "or" requirements. Check individual course descriptions for flexible prerequisites.</em>
+        </p>
+
+        <h4 style="color: #4CAF50; margin-top: 20px;">✓ Ready to Take (${suggestions.canTake.length})</h4>
+        <p style="font-size: 0.9em; margin-bottom: 10px;">All prerequisites and corequisites completed</p>
+        ${canTakeHtml}
+
+        <h4 style="color: #FF9800; margin-top: 20px;">◐ Partially Ready (${suggestions.partialPrereqs.length})</h4>
+        <p style="font-size: 0.9em; margin-bottom: 10px;">Some prerequisites completed</p>
+        ${partialHtml}
+
+        <h4 style="color: #2196F3; margin-top: 20px;">○ No Prerequisites Required (${suggestions.noPrereqs.length})</h4>
+        <p style="font-size: 0.9em; margin-bottom: 10px;">Open to all students</p>
+        ${noPrereqsHtml}
+    `;
+
+    // Hide toggle button when showing suggestions
+    document.getElementById('toggleOtherCoursesBtn').style.display = 'none';
 }
 
 window.addEventListener('DOMContentLoaded', init);

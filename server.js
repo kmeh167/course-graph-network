@@ -163,6 +163,74 @@ app.get('/api/departments', (req, res) => {
   res.json(departments);
 });
 
+app.post('/api/suggest-courses', (req, res) => {
+  const completedCourses = req.body.completedCourses || [];
+  const completedSet = new Set(completedCourses.map(c => c.toUpperCase()));
+
+  // Categorize all courses
+  const suggestions = {
+    canTake: [],           // All prerequisites met
+    partialPrereqs: [],    // Some prerequisites met
+    noPrereqs: []          // No prerequisites required
+  };
+
+  coursesData.forEach(course => {
+    // Skip if already completed
+    if (completedSet.has(course.code)) return;
+
+    const prereqs = course.prerequisites || [];
+    const coreqs = course.corequisites || [];
+
+    if (prereqs.length === 0 && coreqs.length === 0) {
+      // No prerequisites required
+      suggestions.noPrereqs.push({
+        code: course.code,
+        name: course.name,
+        department: course.department,
+        prerequisites: [],
+        corequisites: [],
+        missingPrereqs: [],
+        missingCoreqs: []
+      });
+    } else {
+      // Check which prerequisites are met
+      const missingPrereqs = prereqs.filter(p => !completedSet.has(p));
+      const missingCoreqs = coreqs.filter(c => !completedSet.has(c));
+
+      if (missingPrereqs.length === 0 && missingCoreqs.length === 0) {
+        // All prerequisites met
+        suggestions.canTake.push({
+          code: course.code,
+          name: course.name,
+          department: course.department,
+          prerequisites: prereqs,
+          corequisites: coreqs,
+          missingPrereqs: [],
+          missingCoreqs: []
+        });
+      } else {
+        // Partial prerequisites met
+        suggestions.partialPrereqs.push({
+          code: course.code,
+          name: course.name,
+          department: course.department,
+          prerequisites: prereqs,
+          corequisites: coreqs,
+          missingPrereqs,
+          missingCoreqs
+        });
+      }
+    }
+  });
+
+  // Sort each category alphabetically by code
+  suggestions.canTake.sort((a, b) => a.code.localeCompare(b.code));
+  suggestions.partialPrereqs.sort((a, b) => a.code.localeCompare(b.code));
+  suggestions.noPrereqs.sort((a, b) => a.code.localeCompare(b.code));
+
+  res.json(suggestions);
+});
+
 loadCourseData().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

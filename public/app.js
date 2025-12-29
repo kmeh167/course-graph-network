@@ -19,6 +19,7 @@ async function init() {
     populateSearchDropdowns();
     setupEventListeners();
     updateStats();
+    await loadNoPrerequisiteCourses();
 }
 
 async function loadDepartments() {
@@ -565,6 +566,41 @@ function displayCourseSuggestions(completedCourses, suggestions) {
 
     // Hide toggle button when showing suggestions
     document.getElementById('toggleOtherCoursesBtn').style.display = 'none';
+}
+
+async function loadNoPrerequisiteCourses() {
+    try {
+        const response = await fetch(`${API_BASE}/no-prerequisites`);
+        const noPrereqCourses = await response.json();
+
+        const noPrereqList = document.getElementById('noPrereqList');
+
+        if (noPrereqCourses.length === 0) {
+            noPrereqList.innerHTML = '<p style="font-size: 0.85em; color: #666;">No courses found</p>';
+            return;
+        }
+
+        // Create list of courses
+        const listHtml = noPrereqCourses.map(course => {
+            let html = `<li>
+                <span class="course-link" onclick="focusOnCourse('${course.code}')">${course.code}</span>
+                <br><span style="font-size: 0.8em; color: #666;">${course.name}</span>`;
+
+            // If there's a prerequisite keyword with text, show it
+            if (course.hasPrereqKeyword && course.prereqText) {
+                html += `<span class="prereq-note">${course.prereqText}</span>`;
+            }
+
+            html += `</li>`;
+            return html;
+        }).join('');
+
+        noPrereqList.innerHTML = `<ul>${listHtml}</ul>`;
+    } catch (error) {
+        console.error('Error loading no-prerequisite courses:', error);
+        document.getElementById('noPrereqList').innerHTML =
+            '<p style="font-size: 0.85em; color: #999;">Error loading courses</p>';
+    }
 }
 
 window.addEventListener('DOMContentLoaded', init);

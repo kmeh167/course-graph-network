@@ -163,6 +163,65 @@ app.get('/api/departments', (req, res) => {
   res.json(departments);
 });
 
+app.get('/api/no-prerequisites', (req, res) => {
+  const noPrereqCourses = [];
+
+  coursesData.forEach(course => {
+    const description = course.description || '';
+    const prereqIndex = description.indexOf('Prerequisite:');
+
+    // Case 1: No "Prerequisite:" keyword at all - truly no prerequisites
+    if (prereqIndex === -1) {
+      if (course.prerequisites.length === 0 && course.corequisites.length === 0) {
+        noPrereqCourses.push({
+          code: course.code,
+          name: course.name,
+          department: course.department,
+          hasPrereqKeyword: false,
+          prereqText: null
+        });
+      }
+    } else {
+      // Case 2: "Prerequisite:" keyword exists
+      // Check if there are actual course links after it
+      if (course.prerequisites.length === 0 && course.corequisites.length === 0) {
+        // Extract the text after "Prerequisite:" up to the next section or end
+        const prereqSection = description.substring(prereqIndex);
+        // Find the end of the prerequisite section (look for common section markers)
+        const sectionEndMarkers = [
+          prereqSection.indexOf('Credit Hours:'),
+          prereqSection.indexOf('Same as'),
+          prereqSection.length
+        ].filter(idx => idx !== -1);
+        const sectionEnd = Math.min(...sectionEndMarkers);
+
+        let prereqText = prereqSection.substring('Prerequisite:'.length, sectionEnd).trim();
+
+        // Clean up the text (remove extra whitespace)
+        prereqText = prereqText.replace(/\s+/g, ' ').trim();
+
+        // Limit length for display
+        if (prereqText.length > 150) {
+          prereqText = prereqText.substring(0, 150) + '...';
+        }
+
+        noPrereqCourses.push({
+          code: course.code,
+          name: course.name,
+          department: course.department,
+          hasPrereqKeyword: true,
+          prereqText: prereqText || 'See course description'
+        });
+      }
+    }
+  });
+
+  // Sort alphabetically by code
+  noPrereqCourses.sort((a, b) => a.code.localeCompare(b.code));
+
+  res.json(noPrereqCourses);
+});
+
 app.post('/api/suggest-courses', (req, res) => {
   const completedCourses = req.body.completedCourses || [];
   const completedSet = new Set(completedCourses.map(c => c.toUpperCase()));

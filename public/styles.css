@@ -120,6 +120,52 @@ button:active {
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
+.side-panel {
+    width: 220px;
+    background-color: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+.side-panel h3 {
+    color: #13294b;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+#noPrereqList {
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+#noPrereqList ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+#noPrereqList li {
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#noPrereqList li:last-child {
+    border-bottom: none;
+}
+
+#noPrereqList .course-link {
+    font-size: 0.85rem;
+}
+
+#noPrereqList .prereq-note {
+    font-size: 0.75rem;
+    color: #999;
+    font-style: italic;
+    margin-top: 0.2rem;
+    display: block;
+}
+
 .info-panel {
     width: 350px;
     background-color: white;

@@ -69,6 +69,16 @@ class CourseScraper {
       ? Math.min(...concurrentMatches)
       : Infinity; // No concurrent boundary, all are prerequisites
 
+    // Patterns that indicate a course should NOT be counted as a prerequisite
+    const exclusionPatterns = [
+      /cannot be taken concurrently/i,
+      /may not be taken concurrently/i,
+      /credit is not given/i,
+      /no credit.*toward/i,
+      /not open to students/i,
+      /same as/i
+    ];
+
     // Find all course code links in the description
     // Links look like <a href="/...">CS 225</a>
     $descBlock.find('a').each((i, elem) => {
@@ -90,6 +100,18 @@ class CourseScraper {
         // Find where this course appears in the prerequisite section
         const linkPosition = prereqSection.indexOf(linkText);
         if (linkPosition !== -1) {
+          // Check if the course appears in an exclusion context
+          // Look at the surrounding text (50 characters before and after the course code)
+          const contextStart = Math.max(0, linkPosition - 50);
+          const contextEnd = Math.min(prereqSection.length, linkPosition + linkText.length + 50);
+          const context = prereqSection.substring(contextStart, contextEnd);
+
+          // Skip this course if it matches any exclusion pattern
+          const shouldExclude = exclusionPatterns.some(pattern => pattern.test(context));
+          if (shouldExclude) {
+            return; // Skip courses in negative contexts
+          }
+
           // If the course appears AFTER "concurrent registration", it's a corequisite
           // Otherwise, it's a prerequisite
           if (linkPosition >= concurrentBoundary) {

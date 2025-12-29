@@ -37,13 +37,30 @@ app.get('/api/graph', (req, res) => {
   let graphData;
 
   if (dept) {
-    // Get department-specific data
-    const nodes = courseGraph.getNodesByDepartment(dept.toUpperCase());
-    const nodeCodes = nodes.map(n => n.id);
-    const edges = courseGraph.edges.filter(
-      e => nodeCodes.includes(e.from) || nodeCodes.includes(e.to)
+    // Get department-specific data plus cross-department prerequisites/corequisites
+    const deptNodes = courseGraph.getNodesByDepartment(dept.toUpperCase());
+    const deptNodeCodes = new Set(deptNodes.map(n => n.id));
+
+    // Get all edges connected to department courses
+    const relevantEdges = courseGraph.edges.filter(
+      e => deptNodeCodes.has(e.from) || deptNodeCodes.has(e.to)
     );
-    graphData = { nodes, edges };
+
+    // Find prerequisite/corequisite courses from other departments
+    const additionalNodeCodes = new Set();
+    relevantEdges.forEach(edge => {
+      if (!deptNodeCodes.has(edge.from)) additionalNodeCodes.add(edge.from);
+      if (!deptNodeCodes.has(edge.to)) additionalNodeCodes.add(edge.to);
+    });
+
+    // Get the additional nodes (prerequisites/corequisites from other departments)
+    const allGraphNodes = courseGraph.getGraphData().nodes;
+    const additionalNodes = allGraphNodes.filter(n => additionalNodeCodes.has(n.id));
+
+    // Combine department nodes with cross-department prerequisite/corequisite nodes
+    const allNodes = [...deptNodes, ...additionalNodes];
+
+    graphData = { nodes: allNodes, edges: relevantEdges };
   } else {
     // Get limited data to prevent browser freeze
     const allData = courseGraph.getGraphData();

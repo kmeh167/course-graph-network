@@ -196,6 +196,8 @@ app.post('/api/suggest-courses', (req, res) => {
       // Check which prerequisites are met
       const missingPrereqs = prereqs.filter(p => !completedSet.has(p));
       const missingCoreqs = coreqs.filter(c => !completedSet.has(c));
+      const completedPrereqs = prereqs.filter(p => completedSet.has(p));
+      const completedCoreqs = coreqs.filter(c => completedSet.has(c));
 
       if (missingPrereqs.length === 0 && missingCoreqs.length === 0) {
         // All prerequisites met
@@ -208,8 +210,8 @@ app.post('/api/suggest-courses', (req, res) => {
           missingPrereqs: [],
           missingCoreqs: []
         });
-      } else {
-        // Partial prerequisites met
+      } else if (completedPrereqs.length > 0 || completedCoreqs.length > 0) {
+        // Partial prerequisites met - at least one prerequisite/corequisite completed
         suggestions.partialPrereqs.push({
           code: course.code,
           name: course.name,
@@ -220,6 +222,7 @@ app.post('/api/suggest-courses', (req, res) => {
           missingCoreqs
         });
       }
+      // If no prerequisites are completed at all, don't include in suggestions
     }
   });
 

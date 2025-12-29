@@ -413,10 +413,13 @@ function displayCourseInfo(course) {
     let postreqHtml = '<p>None</p>';
     if (course.postrequisites && course.postrequisites.length > 0) {
         postreqHtml = '<ul>' + course.postrequisites.map(postreq => {
-            const otherPrereqs = postreq.otherPrerequisites && postreq.otherPrerequisites.length > 0
-                ? ` <span style="font-size: 0.9em; color: #666;">(also requires: ${postreq.otherPrerequisites.join(', ')})</span>`
-                : '';
-            return `<li><span class="course-link" onclick="focusOnCourse('${postreq.code}')">${postreq.code}</span> - ${postreq.name}${otherPrereqs}</li>`;
+            let otherPrereqsText = '';
+            if (postreq.otherPrerequisites && postreq.otherPrerequisites.length > 0) {
+                const requireText = postreq.hasOrInPrereqs ? 'also may require' : 'also requires';
+                const checkDescText = postreq.hasOrInPrereqs ? ' - check course description for details' : '';
+                otherPrereqsText = ` <span style="font-size: 0.9em; color: #666;">(${requireText}: ${postreq.otherPrerequisites.join(', ')}${checkDescText})</span>`;
+            }
+            return `<li><span class="course-link" onclick="focusOnCourse('${postreq.code}')">${postreq.code}</span> - ${postreq.name}${otherPrereqsText}</li>`;
         }).join('') + '</ul>';
     }
 

@@ -113,16 +113,16 @@ app.get('/api/course/:code', (req, res) => {
     const postreqCourse = coursesData.find(c => c.code === node.id);
     const otherPrereqs = postreqCourse?.prerequisites.filter(p => p !== code) || [];
 
-    // Check if the description contains "or" in the prerequisite section
-    // Include "and/or" and standalone "or" as indicators of flexible prerequisites
+    // Check if the description contains "or" or "one of" in the prerequisite section
+    // Include "and/or", standalone "or", and "one of" as indicators of flexible prerequisites
     const description = postreqCourse?.description || '';
     const prereqIndex = description.toLowerCase().indexOf('prerequisite:');
     let hasOrInPrereqs = false;
 
     if (prereqIndex !== -1) {
       const prereqSection = description.substring(prereqIndex).toLowerCase();
-      // Look for word "or" (including in "and/or")
-      hasOrInPrereqs = /\bor\b/.test(prereqSection);
+      // Look for word "or" (including in "and/or") or "one of"
+      hasOrInPrereqs = /\bor\b/.test(prereqSection) || /\bone of\b/.test(prereqSection);
     }
 
     return {

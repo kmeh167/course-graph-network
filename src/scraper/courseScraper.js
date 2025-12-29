@@ -38,9 +38,10 @@ class CourseScraper {
    * Prerequisites are courses that must be completed before taking this course
    * Corequisites are courses that must be taken concurrently
    * @param {object} $descBlock - Cheerio object containing course description
+   * @param {string} currentCourseCode - The code of the current course being parsed
    * @returns {object} Object with prerequisites and corequisites arrays
    */
-  parsePrerequisitesAndCorequisites($descBlock) {
+  parsePrerequisitesAndCorequisites($descBlock, currentCourseCode) {
     const prerequisites = [];
     const corequisites = [];
 
@@ -80,6 +81,11 @@ class CourseScraper {
       if (courseMatch) {
         // Format the course name consistently (e.g., "CS 225")
         const courseName = `${courseMatch[1]} ${courseMatch[2]}`;
+
+        // Skip if this course references itself
+        if (courseName === currentCourseCode) {
+          return; // Skip self-references
+        }
 
         // Find where this course appears in the prerequisite section
         const linkPosition = prereqSection.indexOf(linkText);
@@ -193,7 +199,7 @@ class CourseScraper {
       const description = $desc.text().trim();
 
       // Parse prerequisites and corequisites from the description
-      const { prerequisites, corequisites } = this.parsePrerequisitesAndCorequisites($desc);
+      const { prerequisites, corequisites } = this.parsePrerequisitesAndCorequisites($desc, courseCode);
 
       // Add course to array
       courses.push({

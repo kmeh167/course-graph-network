@@ -3,6 +3,9 @@ let allNodes = [];
 let allEdges = [];
 let coursesData = [];
 let currentDepartment = null;
+let currentSelectedCourse = null;
+let currentCourseData = null;
+let showOtherCourses = true;
 
 const API_BASE = CONFIG.API_BASE;
 
@@ -220,6 +223,16 @@ function setupEventListeners() {
             maxZoomLevel: 0.5
         });
     });
+
+    document.getElementById('toggleOtherCoursesBtn').addEventListener('click', () => {
+        showOtherCourses = !showOtherCourses;
+        const btn = document.getElementById('toggleOtherCoursesBtn');
+        btn.textContent = showOtherCourses ? 'Hide Other Courses' : 'Show Other Courses';
+
+        if (currentSelectedCourse && currentCourseData) {
+            highlightCourseWithDependencies(currentSelectedCourse, currentCourseData);
+        }
+    });
 }
 
 async function focusOnCourse(courseCode) {
@@ -240,6 +253,15 @@ async function focusOnCourse(courseCode) {
         nodes.add(allNodes);
         edges.add(allEdges);
         populateSearchDropdowns();
+
+        // Store current selection
+        currentSelectedCourse = courseCode;
+        currentCourseData = courseData;
+        showOtherCourses = true;
+
+        // Show toggle button
+        document.getElementById('toggleOtherCoursesBtn').style.display = 'inline-block';
+        document.getElementById('toggleOtherCoursesBtn').textContent = 'Hide Other Courses';
 
         // Highlight the course and its prerequisites/corequisites
         highlightCourseWithDependencies(courseCode, courseData);
@@ -270,72 +292,106 @@ function highlightCourseWithDependencies(courseCode, courseData) {
     const corequisites = new Set(courseData.corequisites || []);
     const postrequisites = new Set((courseData.postrequisites || []).map(p => p.code));
 
-    const updatedNodes = allNodes.map(node => {
-        if (node.id === courseCode) {
-            // Selected course - orange/red (UIUC orange)
-            return {
-                ...node,
-                color: {
-                    background: '#e84a27',
-                    border: '#c23d1f'
-                },
-                font: { color: '#ffffff', size: 16, bold: true },
-                size: 30
-            };
-        } else if (prerequisites.has(node.id)) {
-            // Prerequisites - blue
-            return {
-                ...node,
-                color: {
-                    background: '#2196F3',
-                    border: '#1976D2'
-                },
-                font: { color: '#ffffff', size: 14 },
-                size: 20
-            };
-        } else if (corequisites.has(node.id)) {
-            // Corequisites - green
-            return {
-                ...node,
-                color: {
-                    background: '#4CAF50',
-                    border: '#388E3C'
-                },
-                font: { color: '#ffffff', size: 14 },
-                size: 20
-            };
-        } else if (postrequisites.has(node.id)) {
-            // Postrequisites - purple
-            return {
-                ...node,
-                color: {
-                    background: '#9C27B0',
-                    border: '#7B1FA2'
-                },
-                font: { color: '#ffffff', size: 14 },
-                size: 20
-            };
-        } else {
-            // Other courses in department - dimmed
-            return {
-                ...node,
-                color: {
-                    background: '#cccccc',
-                    border: '#999999'
-                },
-                font: { color: '#666666', size: 10 },
-                opacity: 0.5
-            };
-        }
-    });
+    // Create set of all relevant courses (selected + pre/co/post requisites)
+    const relevantCourses = new Set([
+        courseCode,
+        ...prerequisites,
+        ...corequisites,
+        ...postrequisites
+    ]);
+
+    const updatedNodes = allNodes
+        .filter(node => {
+            // If hiding other courses, only show relevant ones
+            if (!showOtherCourses) {
+                return relevantCourses.has(node.id);
+            }
+            return true;
+        })
+        .map(node => {
+            if (node.id === courseCode) {
+                // Selected course - orange/red (UIUC orange)
+                return {
+                    ...node,
+                    color: {
+                        background: '#e84a27',
+                        border: '#c23d1f'
+                    },
+                    font: { color: '#ffffff', size: 16, bold: true },
+                    size: 30
+                };
+            } else if (prerequisites.has(node.id)) {
+                // Prerequisites - blue
+                return {
+                    ...node,
+                    color: {
+                        background: '#2196F3',
+                        border: '#1976D2'
+                    },
+                    font: { color: '#ffffff', size: 14 },
+                    size: 20
+                };
+            } else if (corequisites.has(node.id)) {
+                // Corequisites - green
+                return {
+                    ...node,
+                    color: {
+                        background: '#4CAF50',
+                        border: '#388E3C'
+                    },
+                    font: { color: '#ffffff', size: 14 },
+                    size: 20
+                };
+            } else if (postrequisites.has(node.id)) {
+                // Postrequisites - purple
+                return {
+                    ...node,
+                    color: {
+                        background: '#9C27B0',
+                        border: '#7B1FA2'
+                    },
+                    font: { color: '#ffffff', size: 14 },
+                    size: 20
+                };
+            } else {
+                // Other courses in department - dimmed
+                return {
+                    ...node,
+                    color: {
+                        background: '#cccccc',
+                        border: '#999999'
+                    },
+                    font: { color: '#666666', size: 10 },
+                    opacity: 0.5
+                };
+            }
+        });
+
+    // Filter edges to only show connections between visible nodes
+    const visibleNodeIds = new Set(updatedNodes.map(n => n.id));
+    const relevantEdges = allEdges.filter(edge =>
+        visibleNodeIds.has(edge.from) && visibleNodeIds.has(edge.to)
+    );
 
     nodes.clear();
+    edges.clear();
     nodes.add(updatedNodes);
+    edges.add(relevantEdges);
 }
 
 function resetHighlight() {
     nodes.clear();
+    edges.clear();
     nodes.add(allNodes);
+    edges.add(allEdges);
+
+    // Reset state
+    currentSelectedCourse = null;
+    currentCourseData = null;
+    showOtherCourses = true;
+
+    // Hide toggle button
+    document.getElementById('toggleOtherCoursesBtn').style.display = 'none';
 
     document.getElementById('courseInfo').innerHTML =
         '<p>Click on a course node or search for a course to see details</p>';

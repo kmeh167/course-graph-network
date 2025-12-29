@@ -229,12 +229,26 @@ function setupEventListeners() {
             return;
         }
 
-        // Parse input - split by comma and clean up
-        const completedCourses = input.split(',')
-            .map(c => c.trim().toUpperCase())
-            .filter(c => c.length > 0);
+        // Parse input - handle both comma and "or"
+        // "or" means ANY of those courses, comma means ALL
+        const hasOr = input.toLowerCase().includes(' or ');
 
-        await showCourseSuggestions(completedCourses);
+        let completedCourses, orGroups;
+        if (hasOr) {
+            // Split by "or" to get alternative groups
+            orGroups = input.split(/\s+or\s+/i)
+                .map(group => group.split(',').map(c => c.trim().toUpperCase()).filter(c => c.length > 0))
+                .filter(group => group.length > 0);
+            completedCourses = []; // Will be computed on server based on OR logic
+        } else {
+            // Split by comma for AND logic (all courses completed)
+            completedCourses = input.split(',')
+                .map(c => c.trim().toUpperCase())
+                .filter(c => c.length > 0);
+            orGroups = null;
+        }
+
+        await showCourseSuggestions(completedCourses, orGroups);
     });
 }
 
@@ -483,28 +497,33 @@ async function updateStats() {
     }
 }
 
-async function showCourseSuggestions(completedCourses) {
+async function showCourseSuggestions(completedCourses, orGroups = null) {
     try {
         const response = await fetch(`${API_BASE}/suggest-courses`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ completedCourses })
+            body: JSON.stringify({ completedCourses, orGroups })
         });
 
         const suggestions = await response.json();
-        displayCourseSuggestions(completedCourses, suggestions);
+        displayCourseSuggestions(completedCourses, suggestions, orGroups);
     } catch (error) {
         console.error('Error getting course suggestions:', error);
         alert('Error getting course suggestions. Please try again.');
     }
 }
 
-function displayCourseSuggestions(completedCourses, suggestions) {
+function displayCourseSuggestions(completedCourses, suggestions, orGroups = null) {
     const infoDiv = document.getElementById('courseInfo');
 
-    const completedList = completedCourses.join(', ');
+    let completedList;
+    if (orGroups) {
+        completedList = orGroups.map(group => group.join(', ')).join(' OR ');
+    } else {
+        completedList = completedCourses.join(', ');
+    }
 
     let canTakeHtml = '<p>None</p>';
     if (suggestions.canTake.length > 0) {
@@ -548,7 +567,10 @@ function displayCourseSuggestions(completedCourses, suggestions) {
         <h3>Course Suggestions</h3>
         <p><strong>Completed Courses:</strong> ${completedList}</p>
         <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-            <em>Note: Suggestions don't account for "or" requirements. Check individual course descriptions for flexible prerequisites.</em>
+            <em>Tip: Use commas for courses you've completed ALL of (e.g., "CS 225, MATH 221"). Use "or" for courses you've completed ANY of (e.g., "CS 173 or MATH 213").</em>
+        </p>
+        <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
+            <em>Note: Suggestions don't account for flexible "or" requirements in course prerequisites. Check individual course descriptions for details.</em>
         </p>
 
         <h4 style="color: #4CAF50; margin-top: 20px;">✓ Ready to Take (${suggestions.canTake.length})</h4>

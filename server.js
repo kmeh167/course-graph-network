@@ -224,6 +224,19 @@ app.get('/api/no-prerequisites', (req, res) => {
 
 app.post('/api/suggest-courses', (req, res) => {
   const completedCourses = req.body.completedCourses || [];
+  const orGroups = req.body.orGroups || null;
+
+  // Helper function to check if a prerequisite is satisfied
+  const isPrereqSatisfied = (prereq) => {
+    if (orGroups) {
+      // OR logic: check if ANY group contains this prerequisite
+      return orGroups.some(group => group.includes(prereq));
+    } else {
+      // AND logic: check if the prerequisite is in the completed set
+      return completedSet.has(prereq);
+    }
+  };
+
   const completedSet = new Set(completedCourses.map(c => c.toUpperCase()));
 
   // Categorize all courses
@@ -234,8 +247,12 @@ app.post('/api/suggest-courses', (req, res) => {
   };
 
   coursesData.forEach(course => {
-    // Skip if already completed
-    if (completedSet.has(course.code)) return;
+    // Skip if already completed (check all OR groups if applicable)
+    const isAlreadyCompleted = orGroups
+      ? orGroups.some(group => group.includes(course.code))
+      : completedSet.has(course.code);
+
+    if (isAlreadyCompleted) return;
 
     const prereqs = course.prerequisites || [];
     const coreqs = course.corequisites || [];
@@ -253,10 +270,10 @@ app.post('/api/suggest-courses', (req, res) => {
       });
     } else {
       // Check which prerequisites are met
-      const missingPrereqs = prereqs.filter(p => !completedSet.has(p));
-      const missingCoreqs = coreqs.filter(c => !completedSet.has(c));
-      const completedPrereqs = prereqs.filter(p => completedSet.has(p));
-      const completedCoreqs = coreqs.filter(c => completedSet.has(c));
+      const missingPrereqs = prereqs.filter(p => !isPrereqSatisfied(p));
+      const missingCoreqs = coreqs.filter(c => !isPrereqSatisfied(c));
+      const completedPrereqs = prereqs.filter(p => isPrereqSatisfied(p));
+      const completedCoreqs = coreqs.filter(c => isPrereqSatisfied(c));
 
       if (missingPrereqs.length === 0 && missingCoreqs.length === 0) {
         // All prerequisites met

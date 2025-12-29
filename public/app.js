@@ -138,51 +138,39 @@ function initNetwork() {
 }
 
 function populateSearchDropdowns() {
-    const deptCodes = new Set();
-    const courseNumbers = new Map();
+    const courseNumbers = new Set();
 
+    // Extract course numbers from currently loaded nodes
     allNodes.forEach(node => {
         const parts = node.id.split(' ');
         if (parts.length === 2) {
             const [dept, num] = parts;
-            deptCodes.add(dept);
-
-            if (!courseNumbers.has(dept)) {
-                courseNumbers.set(dept, new Set());
+            // Only add if it matches the current department filter
+            if (currentDepartment && dept === currentDepartment) {
+                courseNumbers.add(num);
             }
-            courseNumbers.get(dept).add(num);
         }
     });
 
-    const deptSelect = document.getElementById('deptCodeSelect');
-    deptSelect.innerHTML = '<option value="">Department</option>'; // Clear existing options
-    const sortedDepts = Array.from(deptCodes).sort();
-    sortedDepts.forEach(dept => {
-        const option = document.createElement('option');
-        option.value = dept;
-        option.textContent = dept;
-        deptSelect.appendChild(option);
-    });
+    const numSelect = document.getElementById('courseNumSelect');
 
-    // Remove old event listener by cloning and replacing
-    const newDeptSelect = deptSelect.cloneNode(true);
-    deptSelect.parentNode.replaceChild(newDeptSelect, deptSelect);
-
-    document.getElementById('deptCodeSelect').addEventListener('change', () => {
-        const numSelect = document.getElementById('courseNumSelect');
-        numSelect.innerHTML = '<option value="">Course Number</option>';
-
-        const selectedDept = document.getElementById('deptCodeSelect').value;
-        if (selectedDept && courseNumbers.has(selectedDept)) {
-            const numbers = Array.from(courseNumbers.get(selectedDept)).sort();
-            numbers.forEach(num => {
-                const option = document.createElement('option');
-                option.value = num;
-                option.textContent = num;
-                numSelect.appendChild(option);
-            });
-        }
-    });
+    if (currentDepartment && courseNumbers.size > 0) {
+        // Populate with course numbers from the selected department
+        numSelect.innerHTML = '<option value="">Select Course Number</option>';
+        const sortedNumbers = Array.from(courseNumbers).sort((a, b) => {
+            // Sort numerically
+            return parseInt(a) - parseInt(b);
+        });
+        sortedNumbers.forEach(num => {
+            const option = document.createElement('option');
+            option.value = num;
+            option.textContent = num;
+            numSelect.appendChild(option);
+        });
+    } else {
+        // No department selected
+        numSelect.innerHTML = '<option value="">Select a department first</option>';
+    }
 }
 
 function setupEventListeners() {
@@ -204,11 +192,10 @@ function setupEventListeners() {
     });
 
     document.getElementById('searchBtn').addEventListener('click', () => {
-        const dept = document.getElementById('deptCodeSelect').value;
         const num = document.getElementById('courseNumSelect').value;
 
-        if (dept && num) {
-            const courseCode = `${dept} ${num}`;
+        if (currentDepartment && num) {
+            const courseCode = `${currentDepartment} ${num}`;
             focusOnCourse(courseCode);
         }
     });

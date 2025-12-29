@@ -226,6 +226,8 @@ app.post('/api/suggest-courses', (req, res) => {
   const completedCourses = req.body.completedCourses || [];
   const orGroups = req.body.orGroups || null;
 
+  const completedSet = new Set(completedCourses.map(c => c.toUpperCase()));
+
   // Helper function to check if a prerequisite is satisfied
   const isPrereqSatisfied = (prereq) => {
     if (orGroups) {
@@ -237,11 +239,9 @@ app.post('/api/suggest-courses', (req, res) => {
     }
   };
 
-  const completedSet = new Set(completedCourses.map(c => c.toUpperCase()));
-
   // Categorize all courses
   const suggestions = {
-    canTake: [],           // All prerequisites met
+    canTake: [],           // Courses that require ALL the completed courses
     partialPrereqs: [],    // Some prerequisites met
     noPrereqs: []          // No prerequisites required
   };
@@ -275,30 +275,61 @@ app.post('/api/suggest-courses', (req, res) => {
       const completedPrereqs = prereqs.filter(p => isPrereqSatisfied(p));
       const completedCoreqs = coreqs.filter(c => isPrereqSatisfied(c));
 
-      if (missingPrereqs.length === 0 && missingCoreqs.length === 0) {
-        // All prerequisites met
-        suggestions.canTake.push({
-          code: course.code,
-          name: course.name,
-          department: course.department,
-          prerequisites: prereqs,
-          corequisites: coreqs,
-          missingPrereqs: [],
-          missingCoreqs: []
-        });
-      } else if (completedPrereqs.length > 0 || completedCoreqs.length > 0) {
-        // Partial prerequisites met - at least one prerequisite/corequisite completed
-        suggestions.partialPrereqs.push({
-          code: course.code,
-          name: course.name,
-          department: course.department,
-          prerequisites: prereqs,
-          corequisites: coreqs,
-          missingPrereqs,
-          missingCoreqs
-        });
+      // For comma-separated (AND) mode: check if ALL completed courses are prerequisites
+      if (!orGroups && completedCourses.length > 0) {
+        const allCompletedArePrereqs = completedCourses.every(completed =>
+          prereqs.includes(completed) || coreqs.includes(completed)
+        );
+
+        if (allCompletedArePrereqs && missingPrereqs.length === 0 && missingCoreqs.length === 0) {
+          // This course requires ALL the completed courses
+          suggestions.canTake.push({
+            code: course.code,
+            name: course.name,
+            department: course.department,
+            prerequisites: prereqs,
+            corequisites: coreqs,
+            missingPrereqs: [],
+            missingCoreqs: []
+          });
+        } else if (allCompletedArePrereqs && (missingPrereqs.length > 0 || missingCoreqs.length > 0)) {
+          // Course requires all completed courses but has other missing prerequisites
+          suggestions.partialPrereqs.push({
+            code: course.code,
+            name: course.name,
+            department: course.department,
+            prerequisites: prereqs,
+            corequisites: coreqs,
+            missingPrereqs,
+            missingCoreqs
+          });
+        }
+      } else {
+        // OR mode or regular completion check
+        if (missingPrereqs.length === 0 && missingCoreqs.length === 0) {
+          // All prerequisites met
+          suggestions.canTake.push({
+            code: course.code,
+            name: course.name,
+            department: course.department,
+            prerequisites: prereqs,
+            corequisites: coreqs,
+            missingPrereqs: [],
+            missingCoreqs: []
+          });
+        } else if (completedPrereqs.length > 0 || completedCoreqs.length > 0) {
+          // Partial prerequisites met - at least one prerequisite/corequisite completed
+          suggestions.partialPrereqs.push({
+            code: course.code,
+            name: course.name,
+            department: course.department,
+            prerequisites: prereqs,
+            corequisites: coreqs,
+            missingPrereqs,
+            missingCoreqs
+          });
+        }
       }
-      // If no prerequisites are completed at all, don't include in suggestions
     }
   });
 

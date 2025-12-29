@@ -565,12 +565,12 @@ function displayCourseSuggestions(completedCourses, suggestions, orGroups = null
 
     infoDiv.innerHTML = `
         <h3>Course Suggestions</h3>
-        <p><strong>Completed Courses:</strong> ${completedList}</p>
+        <p><strong>Input Courses:</strong> ${completedList}</p>
         <p style="font-size: 0.9em; color: #666; margin-top: 10px;">
-            <em>Tip: Use commas for courses you've completed ALL of (e.g., "CS 225, MATH 221"). Use "or" for courses you've completed ANY of (e.g., "CS 173 or MATH 213").</em>
+            <em>Tip: Use commas to find courses that require ALL listed courses (e.g., "CS 225, MATH 221"). Use "or" to find courses that require ANY of the listed courses (e.g., "CS 173 or MATH 213").</em>
         </p>
         <p style="font-size: 0.9em; color: #666; margin-top: 5px;">
-            <em>Note: Suggestions don't account for flexible "or" requirements in course prerequisites. Check individual course descriptions for details.</em>
+            <em>Note: Results don't account for flexible "or" requirements in course prerequisites. Check individual course descriptions for details.</em>
         </p>
 
         <h4 style="color: #4CAF50; margin-top: 20px;">✓ Ready to Take (${suggestions.canTake.length})</h4>
